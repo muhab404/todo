@@ -29,6 +29,13 @@ pipeline {
             }
         }
 
+        stage('Test Docker') {
+            steps {
+                sh 'docker ps'
+            }
+        }
+
+
         stage('Login to AWS ECR') {
             steps {
                 withAWS(credentials: 'aws-creds', region: "${AWS_REGION}") {
