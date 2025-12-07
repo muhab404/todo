@@ -1,40 +1,19 @@
 pipeline {
-    agent any
+    agent { label 'master' } // force running on master node
 
     environment {
         AWS_REGION = "us-east-1"
         REPO_NAME = "todo-app"
-        ACCOUNT_ID = "386082432619"  // Replace with your AWS account ID
+        ACCOUNT_ID = "386082432619"
         IMAGE_TAG = "latest"
     }
 
     stages {
-
-        stage('Clean Workspace') {
+        stage('Checkout') {
             steps {
-                deleteDir() // ensures no leftover files from previous builds
+                git branch: 'main', url: 'https://github.com/muhab404/todo'
             }
         }
-
-        stage('Checkout Code') {
-            steps {
-                // Use Git plugin to fetch the repo
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    doGenerateSubmoduleConfigurations: false,
-                    extensions: [],
-                    userRemoteConfigs: [[url: 'https://github.com/muhab404/todo']]
-                ])
-            }
-        }
-
-        stage('Test Docker') {
-            steps {
-                sh 'docker ps'
-            }
-        }
-
 
         stage('Login to AWS ECR') {
             steps {
@@ -49,36 +28,20 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                docker build -t $REPO_NAME:$IMAGE_TAG .
-                '''
+                sh 'docker build -t $REPO_NAME:$IMAGE_TAG .'
             }
         }
 
-        stage('Tag Docker Image') {
+        stage('Tag Image') {
             steps {
-                sh '''
-                docker tag $REPO_NAME:$IMAGE_TAG \
-                    $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG
-                '''
+                sh 'docker tag $REPO_NAME:$IMAGE_TAG $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG'
             }
         }
 
-        stage('Push Docker Image to ECR') {
+        stage('Push Image to ECR') {
             steps {
-                sh '''
-                docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG
-                '''
+                sh 'docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG'
             }
-        }
-    }
-
-    post {
-        success {
-            echo "Docker image pushed to ECR successfully!"
-        }
-        failure {
-            echo "Pipeline failed! Check logs."
         }
     }
 }
