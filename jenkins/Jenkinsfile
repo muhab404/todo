@@ -17,6 +17,11 @@ pipeline {
             }
         }
 
+        stage('Test Docker') {
+            steps {
+                sh 'docker ps'
+            }
+        }
 
         stage('Login to AWS ECR') {
             steps {
