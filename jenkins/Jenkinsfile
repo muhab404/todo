@@ -10,6 +10,13 @@ pipeline {
 
     stages {
 
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
         stage('Login to AWS ECR') {
             steps {
                 withAWS(credentials: 'aws-creds', region: "${AWS_REGION}") {
